@@ -74,23 +74,46 @@ def find_lark_cli() -> str:
     return "lark-cli"
 
 
-def run_lark(args: list, timeout: int = 120, cwd: str = None) -> dict:
+def run_lark(args: list, timeout: int = 120, cwd: str = None, retries: int = 0) -> dict:
+    """执行 lark-cli 命令。retries > 0 时失败自动重试，每次间隔递增。"""
     lark = find_lark_cli()
     cmd = [lark] + args
-    result = subprocess.run(
-        cmd, capture_output=True, text=True,
-        encoding="utf-8", errors="replace", timeout=timeout, cwd=cwd,
-    )
-    stdout = result.stdout or ""
-    stderr = result.stderr or ""
 
-    if result.returncode != 0 and not stdout.strip():
-        return {"ok": False, "error": stderr or stdout or "命令执行失败"}
+    last_error = ""
+    for attempt in range(1 + retries):
+        if attempt > 0:
+            wait = API_INTERVAL * attempt
+            print(f"  重试第 {attempt}/{retries} 次（等 {wait:.1f}s）...", file=sys.stderr)
+            time.sleep(wait)
 
-    try:
-        return json.loads(stdout)
-    except json.JSONDecodeError:
-        return {"ok": False, "error": f"无法解析返回: {stdout[:300]}"}
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True,
+                encoding="utf-8", errors="replace", timeout=timeout, cwd=cwd,
+            )
+        except subprocess.TimeoutExpired:
+            last_error = f"命令超时（{timeout}s）"
+            continue
+
+        stdout = result.stdout or ""
+        stderr = result.stderr or ""
+
+        if result.returncode != 0 and not stdout.strip():
+            last_error = stderr or stdout or "命令执行失败"
+            continue
+
+        try:
+            resp = json.loads(stdout)
+            if resp.get("ok"):
+                return resp
+            last_error = resp.get("error", "返回 ok=false")
+            if attempt >= retries:
+                return resp
+        except json.JSONDecodeError:
+            last_error = f"无法解析返回: {stdout[:300]}"
+            continue
+
+    return {"ok": False, "error": f"重试 {retries} 次后仍失败: {last_error}"}
 
 
 def get_bitable_config() -> tuple:
@@ -190,7 +213,7 @@ def create_text_record(fields: dict) -> dict:
         "--base-token", app_token,
         "--table-id", table_id,
         "--json", "@_feishu_upload.json",
-    ], cwd=str(workspace))
+    ], cwd=str(workspace), retries=2)
 
     if resp.get("ok"):
         record_id = ""
@@ -222,7 +245,7 @@ def upload_attachment(record_id: str, field_name: str, file_path: str) -> dict:
         "--record-id", record_id,
         "--field-id", field_name,
         "--file", dst.name,
-    ], timeout=120, cwd=str(workspace))
+    ], timeout=120, cwd=str(workspace), retries=3)
 
     if resp.get("ok"):
         file_token = ""
