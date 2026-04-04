@@ -1,0 +1,11 @@
+{
+  "dashscope": {
+    "api_key": "在此填入你的阿里云百炼 API Key（sk-xxx）",
+    "image_model": "wan2.7-image",
+    "video_model": "wan2.6-i2v-flash"
+  },
+  "feishu": {
+    "app_token": "",
+    "table_id": ""
+  }
+}
