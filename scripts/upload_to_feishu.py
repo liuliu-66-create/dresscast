@@ -11,7 +11,7 @@ Usage:
     python upload_to_feishu.py setup [--name "虚拟试穿视频"]
     python upload_to_feishu.py upload --product-name <name> --fused-image <path> --video <path> --prompt <text>
 
-依赖: lark-cli (npm install -g @larksuite/cli), lark-bitable-creator skill
+依赖: lark-cli (npm install -g @larksuite/cli)
 """
 
 import argparse
@@ -32,7 +32,6 @@ if sys.stderr and hasattr(sys.stderr, 'buffer'):
 
 SKILL_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = SKILL_DIR / "config.json"
-LARK_BITABLE_CREATOR_DIR = SKILL_DIR.parent / "lark-bitable-creator"
 
 API_INTERVAL = 1.5
 
@@ -105,54 +104,62 @@ def get_bitable_config() -> tuple:
 
 
 def setup(app_name: str = "虚拟试穿视频") -> dict:
-    """调用 lark-bitable-creator 创建多维表格"""
-    creator_script = LARK_BITABLE_CREATOR_DIR / "scripts" / "create_bitable.py"
-    if not creator_script.exists():
-        print(f"Error: create_bitable.py not found at {creator_script}", file=sys.stderr)
-        print("Tip: 请确保 lark-bitable-creator skill 已安装", file=sys.stderr)
-        return {"success": False, "error": "lark-bitable-creator skill 未安装"}
-
-    config_json = {
-        "app_name": app_name,
-        "tables": [{
-            "table_name": "试穿记录",
-            "fields": BITABLE_FIELDS,
-        }],
-    }
-
-    workspace = SKILL_DIR / "workspace"
-    workspace.mkdir(parents=True, exist_ok=True)
-    config_file = workspace / "_bitable_config.json"
-    config_file.write_text(json.dumps(config_json, ensure_ascii=False, indent=2), encoding="utf-8")
-
+    """通过 lark-cli 直接创建多维表格（三步：建表 → 取默认表 → 建字段）"""
+    # 1. 创建多维表格（仅 --name，+base-create 不支持 --tables）
     print(f"正在创建多维表格: {app_name}", file=sys.stderr)
-    result = subprocess.run(
-        [sys.executable, str(creator_script), str(config_file)],
-        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120,
-    )
-    stdout = result.stdout or ""
+    resp = run_lark([
+        "base", "+base-create",
+        "--name", app_name,
+    ], timeout=120)
 
-    output = None
-    lines = stdout.splitlines()
-    for i, line in enumerate(lines):
-        if line.strip() == "__JSON_OUTPUT__":
-            if i + 1 < len(lines):
-                try:
-                    output = json.loads(lines[i + 1])
-                except json.JSONDecodeError:
-                    pass
+    if not resp.get("ok"):
+        return {"success": False, "error": resp.get("error", "创建多维表格失败")}
+
+    # 提取 app_token（可能在不同层级）
+    app_token = ""
+    for path in [
+        resp.get("data", {}).get("app_token", ""),
+        resp.get("data", {}).get("base", {}).get("app_token", ""),
+    ]:
+        if path:
+            app_token = path
             break
 
-    if not output or not output.get("ok"):
-        stderr = result.stderr or ""
-        error_msg = output.get("error", "") if output else stderr or stdout or "未知错误"
-        return {"success": False, "error": error_msg}
+    if not app_token:
+        return {"success": False, "error": f"无法提取 app_token，原始返回: {json.dumps(resp, ensure_ascii=False)[:300]}"}
 
-    app_token = output.get("app_token", "")
-    tables = output.get("tables", [])
-    table_id = tables[0]["table_id"] if tables else ""
-    app_url = output.get("app_url", f"https://my.feishu.cn/base/{app_token}")
+    # 2. 获取默认表的 table_id
+    print("正在获取默认表...", file=sys.stderr)
+    time.sleep(1)
+    list_resp = run_lark([
+        "base", "+table-list",
+        "--base-token", app_token,
+    ])
 
+    table_id = ""
+    if list_resp.get("ok"):
+        tbl_list = list_resp.get("data", {}).get("tables", [])
+        if tbl_list:
+            table_id = tbl_list[0].get("table_id", "")
+
+    if not table_id:
+        return {"success": False, "error": f"无法获取默认表 table_id，原始返回: {json.dumps(list_resp, ensure_ascii=False)[:300]}"}
+
+    # 3. 逐个创建字段
+    print(f"正在创建字段（共 {len(BITABLE_FIELDS)} 个）...", file=sys.stderr)
+    for field in BITABLE_FIELDS:
+        field_resp = run_lark([
+            "base", "+field-create",
+            "--base-token", app_token,
+            "--table-id", table_id,
+            "--json", json.dumps(field, ensure_ascii=False),
+        ])
+        if not field_resp.get("ok"):
+            print(f"Warning: 字段 {field['field_name']} 创建可能失败: {field_resp.get('error', '')}", file=sys.stderr)
+        time.sleep(0.5)
+
+    # 4. 保存到配置
+    app_url = f"https://my.feishu.cn/base/{app_token}"
     config = load_config()
     if "feishu" not in config:
         config["feishu"] = {}
@@ -160,9 +167,7 @@ def setup(app_name: str = "虚拟试穿视频") -> dict:
     config["feishu"]["table_id"] = table_id
     save_config(config)
 
-    config_file.unlink(missing_ok=True)
     print(f"多维表格已创建: app_token={app_token}, table_id={table_id}", file=sys.stderr)
-
     return {"success": True, "app_token": app_token, "table_id": table_id, "url": app_url}
 
 
