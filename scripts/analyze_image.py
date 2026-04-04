@@ -126,6 +126,11 @@ def get_api_key() -> str:
     return os.environ.get("DASHSCOPE_API_KEY", "")
 
 
+def get_vl_model() -> str:
+    config = load_config()
+    return config.get("dashscope", {}).get("vl_model", "qwen3-vl-flash")
+
+
 def encode_image_base64(image_path: str) -> str:
     path = Path(image_path)
     if not path.exists():
@@ -202,8 +207,10 @@ def analyze_image(api_key: str, image_path: str, mode: str, product_type: str = 
     else:
         return {"success": False, "error": f"未知模式: {mode}"}
 
+    vl_model = get_vl_model()
+
     payload = {
-        "model": "qwen3-vl-flash",
+        "model": vl_model,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content},
