@@ -35,13 +35,13 @@
 在 Claude Code 中发送：
 
 ```
-帮我安装这个技能：https://github.com/liuliu-66-create/tryon-video-generator
+帮我安装这个技能：https://github.com/liuliu-66-create/dresscast
 ```
 
 或在终端运行：
 
 ```bash
-git clone https://github.com/liuliu-66-create/tryon-video-generator.git ~/.claude/skills/tryon-video-generator
+git clone https://github.com/liuliu-66-create/dresscast.git ~/.claude/skills/tryon-video-generator
 ```
 
 ### 2. 获取 API Key
@@ -101,7 +101,7 @@ AI 会自动完成所有配置。
 ## 项目结构
 
 ```
-tryon-video-generator/
+dresscast/
 ├── SKILL.md                  # 技能定义（Claude Code 读取）
 ├── config.example.json       # 配置模板
 ├── 安装使用指南.md             # 小白用户指南
