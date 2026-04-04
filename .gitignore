@@ -1,0 +1,9 @@
+# 配置文件（含 API Key，不提交）
+config.json
+
+# 工作区临时文件（效果图、视频等）
+workspace/
+
+# Python 缓存
+__pycache__/
+*.pyc
