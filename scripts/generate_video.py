@@ -68,7 +68,8 @@ def encode_image_base64(image_path: str) -> str:
 
 
 def submit_video_task(api_key: str, model: str, image_url: str, prompt: str,
-                      resolution: str, duration: int = 5, audio: bool = True) -> dict:
+                      resolution: str, duration: int = 5, audio: bool = True,
+                      negative_prompt: str = "") -> dict:
     """提交图生视频异步任务"""
     headers = {
         "Content-Type": "application/json",
@@ -106,6 +107,10 @@ def submit_video_task(api_key: str, model: str, image_url: str, prompt: str,
         payload["parameters"]["prompt_extend"] = True
         if "flash" in model:
             payload["parameters"]["audio"] = audio
+
+    # 负面提示词
+    if negative_prompt:
+        payload["parameters"]["negative_prompt"] = negative_prompt
 
     try:
         resp = requests.post(VIDEO_URL, headers=headers, json=payload, timeout=60)
@@ -168,6 +173,7 @@ def main():
     parser.add_argument("--resolution", default="720P", choices=["480P", "720P", "1080P"], help="视频分辨率")
     parser.add_argument("--duration", type=int, default=5, help="视频时长（秒），wan2.6 支持 2-15 秒")
     parser.add_argument("--audio", action="store_true", default=True, help="生成有声视频（仅 wan2.6-i2v-flash）")
+    parser.add_argument("--negative-prompt", default="", help="负面提示词")
     parser.add_argument("--no-audio", dest="audio", action="store_false", help="生成无声视频")
     args = parser.parse_args()
 
@@ -185,7 +191,7 @@ def main():
 
     # 提交视频生成任务
     print(f"正在提交 {model} 视频生成任务（时长={args.duration}秒，音频={'开启' if args.audio else '关闭'}）...", file=sys.stderr)
-    submit_result = submit_video_task(api_key, model, image_url, args.prompt, args.resolution, args.duration, args.audio)
+    submit_result = submit_video_task(api_key, model, image_url, args.prompt, args.resolution, args.duration, args.audio, args.negative_prompt)
 
     if not submit_result.get("success"):
         print(json.dumps(submit_result, ensure_ascii=False, indent=2))
