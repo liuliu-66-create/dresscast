@@ -41,7 +41,7 @@
 或在终端运行：
 
 ```bash
-git clone https://github.com/liuliu-66-create/dresscast.git ~/.claude/skills/tryon-video-generator
+git clone https://github.com/liuliu-66-create/dresscast.git ~/.claude/skills/dresscast
 ```
 
 ### 2. 获取 API Key

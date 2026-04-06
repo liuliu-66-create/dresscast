@@ -9,7 +9,7 @@ description: "DressCast — 虚拟试穿带货视频生成器。用户提供商�
 
 ## 前置条件
 
-1. **config.json 配置**：确认 `~/.claude/skills/tryon-video-generator/config.json` 中 `dashscope.api_key` 已填入阿里云百炼 API Key
+1. **config.json 配置**：确认 `~/.claude/skills/dresscast/config.json` 中 `dashscope.api_key` 已填入阿里云百炼 API Key
 2. **lark-cli**：确认已安装且已登录（`lark-cli auth status`），用于飞书上传
 3. **Python 依赖**：`requests`（`pip install requests`）
 
@@ -41,7 +41,7 @@ description: "DressCast — 虚拟试穿带货视频生成器。用户提供商�
 **不要使用 Claude 视觉能力分析图片**，改为调用脚本：
 
 ```bash
-python ~/.claude/skills/tryon-video-generator/scripts/analyze_image.py \
+python ~/.claude/skills/dresscast/scripts/analyze_image.py \
   --image "<产品图路径>" \
   --mode product
 ```
@@ -72,7 +72,7 @@ python ~/.claude/skills/tryon-video-generator/scripts/analyze_image.py \
 同时发送产品图和模特图，生成正面/侧面/背面/特写四段融合提示词：
 
 ```bash
-python ~/.claude/skills/tryon-video-generator/scripts/analyze_image.py \
+python ~/.claude/skills/dresscast/scripts/analyze_image.py \
   --image "<产品图路径>" \
   --model-image "<模特图路径>" \
   --mode multi_angle
@@ -95,11 +95,11 @@ python ~/.claude/skills/tryon-video-generator/scripts/analyze_image.py \
 使用 Step 3 的四段提示词，批量生成正面/侧面/背面/特写四张效果图：
 
 ```bash
-python ~/.claude/skills/tryon-video-generator/scripts/virtual_tryon.py \
+python ~/.claude/skills/dresscast/scripts/virtual_tryon.py \
   --product-image "<产品图路径>" \
   --model-image "<模特图路径>" \
   --prompts-json '<Step 3 返回的 prompts JSON>' \
-  --output-dir ~/.claude/skills/tryon-video-generator/workspace
+  --output-dir ~/.claude/skills/dresscast/workspace
 ```
 
 **输出文件：**
@@ -115,7 +115,7 @@ python ~/.claude/skills/tryon-video-generator/scripts/virtual_tryon.py \
 **不要用 Claude 视觉验证**，改用脚本检查正面效果图：
 
 ```bash
-python ~/.claude/skills/tryon-video-generator/scripts/analyze_image.py \
+python ~/.claude/skills/dresscast/scripts/analyze_image.py \
   --image "<正面效果图路径>" \
   --mode fused \
   --product-type "<analysis.garment_type>"
@@ -149,10 +149,10 @@ python ~/.claude/skills/tryon-video-generator/scripts/analyze_image.py \
 运行脚本（固定参数：720P、10秒、有声）：
 
 ```bash
-python ~/.claude/skills/tryon-video-generator/scripts/generate_video.py \
+python ~/.claude/skills/dresscast/scripts/generate_video.py \
   --image "<正面效果图路径>" \
   --prompt "<视频提示词>" \
-  --output ~/.claude/skills/tryon-video-generator/workspace/video_<timestamp>.mp4 \
+  --output ~/.claude/skills/dresscast/workspace/video_<timestamp>.mp4 \
   --resolution 720P \
   --duration 10 \
   --audio
@@ -165,13 +165,13 @@ python ~/.claude/skills/tryon-video-generator/scripts/generate_video.py \
 如果是第一次使用，先创建表格：
 
 ```bash
-python ~/.claude/skills/tryon-video-generator/scripts/upload_to_feishu.py setup --name "虚拟试穿视频"
+python ~/.claude/skills/dresscast/scripts/upload_to_feishu.py setup --name "虚拟试穿视频"
 ```
 
 然后上传结果（含四张效果图）：
 
 ```bash
-python ~/.claude/skills/tryon-video-generator/scripts/upload_to_feishu.py upload \
+python ~/.claude/skills/dresscast/scripts/upload_to_feishu.py upload \
   --product-name "<product_name>" \
   --model-image "<模特图路径>" \
   --product-image "<产品图路径>" \
