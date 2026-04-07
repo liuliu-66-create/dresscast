@@ -44,7 +44,7 @@ BITABLE_FIELDS = [
     {"field_name": "背面效果图", "type": "attachment"},
     {"field_name": "特写效果图", "type": "attachment"},
     {"field_name": "营销视频", "type": "attachment"},
-    {"field_name": "视频提示词", "type": "text"},
+    {"field_name": "视频台词", "type": "text"},
     {"field_name": "使用模型", "type": "text"},
     {"field_name": "创建时间", "type": "datetime"},
 ]
@@ -143,6 +143,7 @@ def setup(app_name: str = "虚拟试穿视频") -> dict:
     for path in [
         resp.get("data", {}).get("app_token", ""),
         resp.get("data", {}).get("base", {}).get("app_token", ""),
+        resp.get("data", {}).get("base", {}).get("base_token", ""),
     ]:
         if path:
             app_token = path
@@ -161,14 +162,37 @@ def setup(app_name: str = "虚拟试穿视频") -> dict:
 
     table_id = ""
     if list_resp.get("ok"):
-        tbl_list = list_resp.get("data", {}).get("tables", [])
+        tbl_list = list_resp.get("data", {}).get("items", []) or list_resp.get("data", {}).get("tables", [])
         if tbl_list:
             table_id = tbl_list[0].get("table_id", "")
 
     if not table_id:
         return {"success": False, "error": f"无法获取默认表 table_id，原始返回: {json.dumps(list_resp, ensure_ascii=False)[:300]}"}
 
-    # 3. 逐个创建字段
+    # 3. 获取并删除默认字段
+    print("正在清理默认字段...", file=sys.stderr)
+    time.sleep(1)
+    field_list_resp = run_lark([
+        "base", "+field-list",
+        "--base-token", app_token,
+        "--table-id", table_id,
+    ])
+    if field_list_resp.get("ok"):
+        default_fields = field_list_resp.get("data", {}).get("items", []) or field_list_resp.get("data", {}).get("fields", [])
+        for df in default_fields:
+            fid = df.get("field_id", "")
+            fname = df.get("field_name", "")
+            if fid:
+                print(f"  删除默认字段: {fname} ({fid})", file=sys.stderr)
+                run_lark([
+                    "base", "+field-delete",
+                    "--base-token", app_token,
+                    "--table-id", table_id,
+                    "--field-id", fid,
+                ])
+                time.sleep(0.3)
+
+    # 4. 逐个创建字段
     print(f"正在创建字段（共 {len(BITABLE_FIELDS)} 个）...", file=sys.stderr)
     for field in BITABLE_FIELDS:
         field_resp = run_lark([
@@ -181,7 +205,7 @@ def setup(app_name: str = "虚拟试穿视频") -> dict:
             print(f"Warning: 字段 {field['field_name']} 创建可能失败: {field_resp.get('error', '')}", file=sys.stderr)
         time.sleep(0.5)
 
-    # 4. 保存到配置
+    # 5. 保存到配置
     app_url = f"https://my.feishu.cn/base/{app_token}"
     config = load_config()
     if "feishu" not in config:
@@ -267,7 +291,7 @@ def upload(product_name: str, model_image: str, product_image: str,
     print("正在创建记录...", file=sys.stderr)
     rec_result = create_text_record({
         "产品名称": product_name,
-        "视频提示词": prompt,
+        "视频台词": prompt,
         "使用模型": model,
         "创建时间": int(datetime.now().timestamp() * 1000),
     })
