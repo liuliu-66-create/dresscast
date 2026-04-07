@@ -15,14 +15,20 @@
 ## 效果展示
 
 **输入：**
-- 产品图（服装平铺 / 白底图）
-- 模特图（全身或半身照）
+
+| 产品图 | 模特图 |
+|--------|--------|
+| <img src="assets/product.jpg" width="250"> | <img src="assets/model.jpg" width="250"> |
 
 **输出：**
 
-| 正面 | 侧面 | 背面 | 视频 |
+| 正面 | 侧面 | 背面 | 特写 |
 |------|------|------|------|
-| 静态效果图 | 静态效果图 | 静态效果图 | 10秒有声MP4 |
+| <img src="assets/fused_正面.jpg" width="220"> | <img src="assets/fused_侧面.jpg" width="220"> | <img src="assets/fused_背面.jpg" width="220"> | <img src="assets/fused_特写.jpg" width="220"> |
+
+**带货视频：**
+
+<img src="assets/demo_video.gif" width="360">
 
 ---
 
@@ -104,6 +110,7 @@ AI 会自动完成所有配置。
 dresscast/
 ├── SKILL.md                  # 技能定义（Claude Code 读取）
 ├── config.example.json       # 配置模板
+├── assets/                   # 效果展示图片和视频 GIF
 ├── 安装使用指南.md             # 小白用户指南
 ├── references/
 │   └── prompts.md            # 提示词模板参考
