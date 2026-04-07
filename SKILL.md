@@ -13,6 +13,10 @@ description: "DressCast — 虚拟试穿带货视频生成器。用户提供商�
 2. **lark-cli**：确认已安装且已登录（`lark-cli auth status`），用于飞书上传
 3. **Python 依赖**：`requests`（`pip install requests`）
 
+## 版权提醒
+
+> 请确保模特图为本人照片或已获授权的素材。使用未经授权的人物肖像可能侵犯他人肖像权。
+
 ## 模型配置
 
 | 用途 | 模型 | 计费 |
