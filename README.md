@@ -28,7 +28,9 @@
 
 **带货视频：**
 
-<img src="assets/demo_video.gif" width="360">
+https://github.com/user-attachments/assets/b18d6c39-ede0-40e4-a341-0abda40aaffc
+
+> 💡 上方为带货视频演示（含 BGM + 人声）。如无法播放，请[点击下载](assets/demo_video.mp4)查看。
 
 ---
 
@@ -110,7 +112,7 @@ AI 会自动完成所有配置。
 dresscast/
 ├── SKILL.md                  # 技能定义（Claude Code 读取）
 ├── config.example.json       # 配置模板
-├── assets/                   # 效果展示图片和视频 GIF
+├── assets/                   # 效果展示图片和演示视频
 ├── 安装使用指南.md             # 小白用户指南
 ├── references/
 │   └── prompts.md            # 提示词模板参考
